@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>DHNow E@L</title>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+
+	<link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css" />
+	<script src="../node_modules/leaflet/dist/leaflet-src.js"></script>
+
+	<!-- This creates a zoom slider in the top left corner of the map -->
+    <link rel="stylesheet" href="Leaflet.zoomslider/src/L.Control.Zoomslider.css" />
+    <script src="Leaflet.zoomslider/src/L.Control.Zoomslider.js" ></script>
+
+    <!-- Referencing both of the geoJSON files -->
+	<script src="Layer_Files/GeoDataEdatLarge.js"></script>
+	<script src="Layer_Files/DHCenters.js"></script>
+
+	<!-- Referencing the Marker Cluster Plugin -->
+	<link rel="stylesheet" href= "Leaflet.markercluster/MarkerCluster.css"/>
+	<link rel="stylesheet" href= "leaflet.markercluster/MarkerCluster.Default.css"/>
+	<script src= "Leaflet.markercluster/leaflet.markercluster-src.js"></script>
+
+	<style>
+	#map {width: 100%; height: 99%; position:absolute; margin:1px 1px 1px 1px;}
+	#title {margin:0 0 1px 0; padding: 10px 0 5px 0; font-family: Verdana, Geneva, sans-serif;}
+	#banner {text-align: center; background-color: #DCE3F3; margin: 0; padding:0;}
+	body {margin:0;}
+	</style>
+</head>
+<body>
+
+	<div id="container">
+ 	 	<div id="map"></div> 
+ 	</div>
+
+
+    <script>
+
+    	//creating a map variable and instantiating a map with a default view and zoom level
+		var map = L.map('map', {zoomControl: false}).setView([32.33,-41.09], 3);
+
+		//adding the zoomslider function to the map
+		map.addControl(new L.Control.Zoomslider());
+
+		//adding a scale bar to the map
+		L.control.scale().addTo(map);
+
+    	//Referencing the night time satellite imagery basemap, detailing attributes, assigning to a variable
+		var night = L.tileLayer('http://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/{time}/{tilematrixset}{maxZoom}/{z}/{y}/{x}.{format}', {
+			attribution: 'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
+			bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]],
+			minZoom: 2,
+			maxZoom: 8,
+			format: 'jpg',
+			time: '',
+			tilematrixset: 'GoogleMapsCompatible_Level'
+		});
+
+		//Referencing the political basmeap, detailing attributes, adding to the map
+		var political = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+				maxZoom: 9,
+				minZoom:2
+		}).addTo(map);
+
+		//Instantiating base layer toggle with listed baselayers
+		var baseLayers = {
+	    	"Political": political,
+	    	"Satellite": night,
+		};
+
+		//Creating custom icon
+		var blueIcon = L.icon({
+	    	iconUrl: 'icons/blueFlag_icon.png',
+	    	iconAnchor:   [16, 32] // point of the icon which will correspond to marker's location
+		});
+
+		//Creating custom icon
+		var redIcon = L.icon({
+    		iconUrl: 'icons/redFlag_icon.png',
+   			iconAnchor:   [16, 32] // point of the icon which will correspond to marker's location
+		});
+
+		//Bringing in the DH Centers geoJSON file and assigning a custom marker to this point layer
+		var centers = new L.geoJson(Centers, {
+		    pointToLayer: function(feature, latlng) {
+    	    return new L.marker(latlng, {icon: blueIcon});
+    	}});
+
+		//Creating the overlay layers
+		var overlays = {
+			"Centers": centers
+		};
+
+		//adding the basemaps and overlay layers
+		L.control.layers(baseLayers, overlays).addTo(map);
+
+		//assigning the Editors geoJSON file to a variable, assigning a custom marker, and binding popups to each marker
+		var editors = new L.geoJson(Editors, {
+		    pointToLayer: function(feature, latlng) {
+     	   return new L.marker(latlng, {icon: redIcon})},
+			onEachFeature: Popups
+		});
+
+		//Creating a Marker Cluster variable with various attribute data applied
+		var markers = new L.MarkerClusterGroup({
+			showCoverageOnHover: false, 
+			maxClusterRadius: 40, 
+			icon: redIcon
+		});
+
+		//Adding the Editors layer to the Marker Cluster variable
+		markers.addLayer(editors);
+
+		//Adding the Marker Clustered Editors layer to the Map
+		map.addLayer(markers);
+
+		//This populates the popup windows with information from teh geoJSON file
+		function Popups(feature, layer) 
+			{		
+				var Attributes = "<br><b>Name: </b>"+feature.properties.Name+
+					"<br>"+
+					"<br><b> Affiliation: </b>"+feature.properties.Affiliation+
+					"<br>"+
+					"<br><b> Twitter: </b>"+feature.properties.Twitter+
+					"<br>"+
+					"<br><b> Latitude: </b>"+feature.properties.Latitude+
+					"<br>"+
+					"<br><b> Longitude: </b>"+feature.properties.Longitude;
+       			 layer.bindPopup(Attributes); 
+       		}
+
+	</script>
+  </body>
+</html>
+
+
